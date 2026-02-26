@@ -1,0 +1,98 @@
+body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background: #f4f6f9;
+}
+
+.dashboard {
+  display: flex;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 220px;
+  background: #1b5e20;
+  color: white;
+  padding: 20px;
+  min-height: 100vh;
+}
+
+.sidebar h2 {
+  text-align: center;
+}
+
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+}
+
+.sidebar li {
+  padding: 12px;
+  cursor: pointer;
+}
+
+.sidebar li:hover {
+  background: #2e7d32;
+}
+
+/* Main */
+.main {
+  flex: 1;
+  padding: 20px;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Cards */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.card {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  text-align: center;
+  transition: 0.3s;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+}
+
+/* Chart */
+.chart-section {
+  margin-top: 40px;
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+}
+
+/* ML Box */
+.ml-box {
+  margin-top: 40px;
+  background: #e8f5e9;
+  padding: 20px;
+  border-radius: 12px;
+}
+
+/* Alerts */
+.alerts {
+  margin-top: 30px;
+  background: #ffebee;
+  padding: 20px;
+  border-radius: 12px;
+}
+
+#alertBox {
+  color: red;
+  font-weight: bold;
+}
