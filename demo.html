@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Smart Agriculture ML System</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body{
+margin:0;
+font-family:Segoe UI;
+background:#f4f6fb;
+}
+
+.container{
+max-width:1400px;
+margin:auto;
+padding:20px;
+}
+
+h1{text-align:center;color:#2e7d32;}
+
+.topbar{
+display:flex;
+justify-content:space-between;
+flex-wrap:wrap;
+margin-bottom:20px;
+}
+
+.location{
+background:white;
+padding:10px 20px;
+border-radius:10px;
+box-shadow:0 4px 10px rgba(0,0,0,0.05);
+}
+
+.controls button{
+padding:8px 15px;
+border:none;
+border-radius:6px;
+background:#2e7d32;
+color:white;
+cursor:pointer;
+margin:5px;
+}
+
+.cards{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+gap:20px;
+}
+
+.card{
+background:white;
+padding:20px;
+border-radius:12px;
+box-shadow:0 4px 15px rgba(0,0,0,0.06);
+text-align:center;
+}
+
+.circle{
+position:relative;
+width:120px;
+height:120px;
+margin:auto;
+}
+
+svg{
+width:120px;
+height:120px;
+transform:rotate(-90deg);
+}
+
+svg circle{
+fill:none;
+stroke-width:10;
+stroke-linecap:round;
+}
+
+svg circle:first-child{
+stroke:#eee;
+}
+
+svg circle:last-child{
+stroke:#4caf50;
+stroke-dasharray:314;
+stroke-dashoffset:314;
+transition:1s;
+}
+
+.number{
+position:absolute;
+top:50%;
+left:50%;
+transform:translate(-50%,-50%);
+font-weight:bold;
+}
+
+.motor-icon{
+font-size:30px;
+margin-bottom:8px;
+}
+
+.rotate{
+animation:spin 1s linear infinite;
+}
+
+@keyframes spin{
+100%{transform:rotate(360deg);}
+}
+
+.chart-box,.analysis{
+margin-top:30px;
+background:white;
+padding:20px;
+border-radius:12px;
+box-shadow:0 4px 15px rgba(0,0,0,0.06);
+}
+
+#alertBox{
+margin-top:20px;
+padding:15px;
+border-radius:8px;
+font-weight:bold;
+text-align:center;
+}
+
+.alert-green{background:#e8f5e9;color:#1b5e20;}
+.alert-red{background:#ffebee;color:#b71c1c;}
+.alert-orange{background:#fff3e0;color:#e65100;}
+
+.modal{
+display:none;
+position:fixed;
+top:0;left:0;
+width:100%;height:100%;
+background:rgba(0,0,0,0.5);
+justify-content:center;
+align-items:center;
+}
+
+.modal-content{
+background:white;
+padding:30px;
+border-radius:12px;
+text-align:center;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>🌾 Smart Agriculture ML Dashboard</h1>
+
+<div class="topbar">
+<div class="location">
+📍 Farmer Location: Chennai, Tamil Nadu
+</div>
+
+<div class="controls">
+<button onclick="toggleMode()">Switch Auto/Manual</button>
+<button onclick="toggleMotor()">Motor Control</button>
+</div>
+</div>
+
+<!-- SENSOR CARDS -->
+<div class="cards">
+
+<div class="card">
+<h3>Soil Moisture</h3>
+<div class="circle">
+<svg>
+<circle cx="60" cy="60" r="50"></circle>
+<circle cx="60" cy="60" r="50" id="moistureCircle"></circle>
+</svg>
+<div class="number" id="moistureText">0%</div>
+</div>
+</div>
+
+<div class="card">
+<h3>Temperature</h3>
+<h2 id="temp">0°C</h2>
+</div>
+
+<div class="card">
+<h3>Humidity</h3>
+<h2 id="humidity">0%</h2>
+</div>
+
+<div class="card">
+<span id="motorIcon" class="motor-icon">⚙</span>
+<h3>Motor</h3>
+<h2 id="motorStatus">OFF</h2>
+</div>
+
+</div>
+
+<!-- GRAPH -->
+<div class="chart-box">
+<h2>📈 7 Day Yield Prediction</h2>
+<canvas id="futureChart"></canvas>
+</div>
+
+<!-- ANALYSIS -->
+<div class="analysis">
+<h2>📊 Intelligent Analysis</h2>
+<p id="yield"></p>
+<p id="waterReq"></p>
+<p id="confidence"></p>
+</div>
+
+<!-- CLOCK -->
+<div class="analysis">
+<h2>🕒 Live Farm Time</h2>
+<h1 id="liveClock" style="text-align:center;color:#2e7d32;"></h1>
+<p id="liveDate" style="text-align:center;"></p>
+</div>
+
+<div id="alertBox">System Monitoring...</div>
+
+</div>
+
+<!-- MODAL -->
+<div class="modal" id="popup">
+<div class="modal-content">
+<h3 id="popupText"></h3>
+<button onclick="closeModal()">OK</button>
+</div>
+</div>
+
+<script>
+
+let manual=false;
+let motorOn=false;
+
+const futureChart=new Chart(document.getElementById("futureChart"),{
+type:"line",
+data:{
+labels:["Day1","Day2","Day3","Day4","Day5","Day6","Day7"],
+datasets:[{
+label:"Yield %",
+data:[50,55,60,58,62,65,70],
+borderColor:"#2e7d32",
+tension:0.4
+}]
+}
+});
+
+function toggleMode(){
+manual=!manual;
+showPopup("Mode changed to "+(manual?"Manual":"Auto"));
+}
+
+function toggleMotor(){
+motorOn=!motorOn;
+updateMotorUI();
+showPopup("Motor is "+(motorOn?"ON":"OFF"));
+}
+
+function updateMotorUI(){
+document.getElementById("motorStatus").innerText=motorOn?"ON":"OFF";
+let icon=document.getElementById("motorIcon");
+motorOn?icon.classList.add("rotate"):icon.classList.remove("rotate");
+}
+
+function showPopup(msg){
+document.getElementById("popupText").innerText=msg;
+document.getElementById("popup").style.display="flex";
+}
+
+function closeModal(){
+document.getElementById("popup").style.display="none";
+}
+
+function updateSystem(){
+
+let moisture=Math.floor(Math.random()*100);
+let temp=Math.floor(Math.random()*40);
+let humidity=Math.floor(Math.random()*100);
+
+document.getElementById("temp").innerText=temp+"°C";
+document.getElementById("humidity").innerText=humidity+"%";
+
+let circle=document.getElementById("moistureCircle");
+let offset=314-(314*moisture)/100;
+circle.style.strokeDashoffset=offset;
+document.getElementById("moistureText").innerText=moisture+"%";
+
+if(!manual){
+if(moisture<40) motorOn=true;
+if(moisture>75) motorOn=false;
+updateMotorUI();
+}
+
+let yieldVal=Math.round(0.5*moisture+0.3*humidity);
+let waterNeed=Math.max(0,60-moisture);
+
+document.getElementById("yield").innerHTML=
+"Predicted Yield: <b>"+yieldVal+"%</b>";
+
+document.getElementById("waterReq").innerHTML=
+"Water Required: <b>"+waterNeed+"%</b>";
+
+document.getElementById("confidence").innerText=
+"Model Confidence: "+(85+Math.floor(Math.random()*10))+"%";
+
+let alertBox=document.getElementById("alertBox");
+
+if(moisture<35){
+alertBox.innerText="🚨 Critical Moisture! Irrigation Activated.";
+alertBox.className="alert-red";
+}
+else{
+alertBox.innerText="✅ Field Conditions Stable.";
+alertBox.className="alert-green";
+}
+
+}
+
+setInterval(updateSystem,4000);
+updateSystem();
+
+function updateClock(){
+let now=new Date();
+let h=now.getHours().toString().padStart(2,"0");
+let m=now.getMinutes().toString().padStart(2,"0");
+let s=now.getSeconds().toString().padStart(2,"0");
+
+let day=now.toLocaleDateString("en-IN",{weekday:"long",year:"numeric",month:"long",day:"numeric"});
+
+document.getElementById("liveClock").innerText=h+":"+m+":"+s;
+document.getElementById("liveDate").innerText=day;
+}
+setInterval(updateClock,1000);
+updateClock();
+
+</script>
+
+</body>
+</html>
